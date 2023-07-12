@@ -6,6 +6,11 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+// for pallet-dex
+use frame_support::PalletId;
+use frame_system::{EnsureRoot,EnsureSigned};
+use sp_runtime::traits::Identity;
+
 use pallet_grandpa::AuthorityId as GrandpaId;
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -27,7 +32,7 @@ use sp_version::RuntimeVersion;
 pub use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
-		ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness, StorageInfo,
+		AsEnsureOriginWithArg,ConstU128, ConstU32, ConstU64, ConstU8, KeyOwnerProofSystem, Randomness, StorageInfo,
 	},
 	weights::{
 		constants::{
@@ -47,6 +52,10 @@ pub use sp_runtime::{Perbill, Permill};
 
 /// Import the template pallet.
 pub use pallet_template;
+
+// for pallet-dex
+pub type AssetBalance = Balance;
+pub type AssetId = u32;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -147,6 +156,52 @@ parameter_types! {
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u8 = 42;
+}
+
+// Configure pallet_dex to include in runtime.
+
+parameter_types! {
+	pub const DexPalletId: PalletId = PalletId(*b"dex_mock");
+}
+
+impl pallet_dex::Config for Runtime {
+	type PalletId = DexPalletId;
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type AssetBalance = AssetBalance;
+	type AssetToCurrencyBalance = Identity;
+	type CurrencyToAssetBalance = Identity;
+	type AssetId = AssetId;
+	type Assets = Assets;
+	type AssetRegistry = Assets;
+	type WeightInfo = ();
+	// Provider fee is 0.3%
+	type ProviderFeeNumerator = ConstU128<3>;
+	type ProviderFeeDenominator = ConstU128<1000>;
+	type MinDeposit = ConstU128<1>;
+}
+
+impl pallet_assets::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = AssetBalance;
+	type AssetId = AssetId;
+	type Currency = Balances;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetDeposit = ConstU128<1>;
+	type AssetAccountDeposit = ConstU128<10>;
+	type MetadataDepositBase = ConstU128<1>;
+	type MetadataDepositPerByte = ConstU128<1>;
+	type ApprovalDeposit = ConstU128<1>;
+	type StringLimit = ConstU32<50>;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = ();
+
+	type RemoveItemsLimit = ConstU32<1000>;
+	type AssetIdParameter = codec::Compact<u32>;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+	type CallbackHandle = ();
+
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -285,6 +340,10 @@ construct_runtime!(
 		Sudo: pallet_sudo,
 		// Include the custom logic from the pallet-template in the runtime.
 		TemplateModule: pallet_template,
+
+		// Include the custom logic from the pallet-dex in the runtime.
+		Assets: pallet_assets,
+		Dex: pallet_dex,
 	}
 );
 
@@ -336,6 +395,39 @@ mod benches {
 }
 
 impl_runtime_apis! {
+
+	// Add the RPC implementation of pallet-dex
+
+	impl pallet_dex_rpc_runtime_api::DexApi<Block, AssetId, Balance, AssetBalance> for Runtime {
+		fn get_currency_to_asset_output_amount(
+			asset_id: AssetId,
+			currency_amount: Balance
+		) -> pallet_dex_rpc_runtime_api::RpcResult<AssetBalance> {
+			Dex::get_currency_to_asset_output_amount(asset_id, currency_amount)
+		}
+
+		fn get_currency_to_asset_input_amount(
+			asset_id: AssetId,
+			token_amount: AssetBalance
+		) -> pallet_dex_rpc_runtime_api::RpcResult<Balance> {
+			Dex::get_currency_to_asset_input_amount(asset_id, token_amount)
+		}
+
+		fn get_asset_to_currency_output_amount(
+			asset_id: AssetId,
+			token_amount: AssetBalance
+		) -> pallet_dex_rpc_runtime_api::RpcResult<Balance> {
+			Dex::get_asset_to_currency_output_amount(asset_id, token_amount)
+		}
+
+		fn get_asset_to_currency_input_amount(
+			asset_id: AssetId,
+			currency_amount: Balance
+		) -> pallet_dex_rpc_runtime_api::RpcResult<AssetBalance> {
+			Dex::get_asset_to_currency_input_amount(asset_id, currency_amount)
+		}
+	}
+
 	impl sp_api::Core<Block> for Runtime {
 		fn version() -> RuntimeVersion {
 			VERSION

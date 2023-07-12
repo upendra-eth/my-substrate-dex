@@ -37,8 +37,15 @@ where
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BlockBuilder<Block>,
+
+	C::Api: pallet_dex_rpc::DexRuntimeApi<Block, AssetId, Balance, AssetBalance>,
+
 	P: TransactionPool + 'static,
 {
+
+	//pallet-dex
+	use pallet_dex_rpc::{Dex, DexApiServer};
+
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 
@@ -52,6 +59,9 @@ where
 	// `YourRpcStruct` should have a reference to a client, which is needed
 	// to call into the runtime.
 	// `module.merge(YourRpcTrait::into_rpc(YourRpcStruct::new(ReferenceToClient, ...)))?;`
+
+	//pallet-dex
+	module.merge(Dex::new(client).into_rpc())?;
 
 	Ok(module)
 }

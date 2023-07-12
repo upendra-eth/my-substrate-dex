@@ -152,5 +152,15 @@ fn testnet_genesis(
 			key: Some(root_key),
 		},
 		transaction_payment: Default::default(),
+
+		// Add genesis configuration for assets and pallet-dex
+		assets: AssetsConfig {
+            assets: vec![],
+            accounts: vec![],
+            metadata: vec![],
+        },
+        dex: DexConfig {
+            exchanges: vec![],
+        }
 	}
 }

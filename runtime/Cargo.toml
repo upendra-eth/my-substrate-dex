@@ -27,8 +27,8 @@ pallet-timestamp = { version = "4.0.0-dev", default-features = false, git = "htt
 pallet-transaction-payment = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
 
 pallet-assets = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.40" }
-pallet-dex = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate-dex.git", branch = "polkadot-v0.9.40" }
-pallet-dex-rpc-runtime-api = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate-dex.git", branch = "polkadot-v0.9.40" }
+pallet-dex = { version = "0.0.1", default-features = false, git = "https://github.com/paritytech/substrate-dex.git", branch = "polkadot-v0.9.40" }
+pallet-dex-rpc-runtime-api = { version = "0.0.1", default-features = false, git = "https://github.com/paritytech/substrate-dex.git", branch = "polkadot-v0.9.40" }
 
 
 
